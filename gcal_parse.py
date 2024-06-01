@@ -1,6 +1,7 @@
 import datetime as dt
 import os.path
 import random
+import pytz
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -31,32 +32,9 @@ def main():
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        # Call the Calendar API
-        now = dt.datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
-        print("Getting the upcoming 10 events")
-        events_result = (
-            service.events()
-            .list(
-                calendarId="primary",
-                timeMin=now,
-                maxResults=10,
-                singleEvents=True,
-                orderBy="startTime",
-            )
-            .execute()
-        )
-        events = events_result.get("items", [])
+        # rand_events(service)
 
-        if not events:
-            print("No upcoming events found.")
-            return
-
-        # Prints the start and name of the next 10 events
-        for event in events:
-            start = event["start"].get("dateTime", event["start"].get("date"))
-            print(start, event["summary"])
-
-        rand_events(service)
+        print(get_events_on_day(2024, 5, 31, 'America/Chicago', service=service))
 
     except HttpError as error:
         print(f"An error occurred: {error}")
@@ -69,7 +47,7 @@ def rand_events(service):
     start_date = datetime.now()
     end_date = start_date + timedelta(days=7)
 
-    for _ in range(10):  # number of events to generate
+    for _ in range(5):  # number of events to generate
         # Generate a random start time
         start_time = start_date + timedelta(hours=random.randint(7, 22 * 7 - 1))
 
@@ -90,6 +68,59 @@ def rand_events(service):
         event = service.events().insert(calendarId=calendar_id, body=event).execute()
 
         print(f'Event created: {event.get("htmlLink")}')
+
+def get_events_on_day(year, month, day, timezone_str, service):
+    # Set the start and end times for the day including the full day from 00:00 to 23:59
+    timezone = pytz.timezone(timezone_str)
+    start_datetime = timezone.localize(datetime(year, month, day, 0, 0, 0))  # 00:00
+    end_datetime = timezone.localize(datetime(year, month, day, 23, 59, 59))  # 23:59
+
+    # Format the start and end times for the Google Calendar API
+    start_datetime_iso = start_datetime.isoformat()
+    end_datetime_iso = end_datetime.isoformat()
+
+    # Get the events within the specified time range
+    events_result = service.events().list(
+        calendarId='primary',
+        timeMin=start_datetime_iso,
+        timeMax=end_datetime_iso,
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+
+    # Create a map of events
+    events_map = {}
+    events = events_result.get('items', [])
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        end = event['end'].get('dateTime', event['end'].get('date'))
+        start_time = datetime.fromisoformat(start)
+        end_time = datetime.fromisoformat(end)
+
+        # Convert the start and end times to the user's timezone
+        start_time = start_time.astimezone(timezone)
+        end_time = end_time.astimezone(timezone)
+
+        # Adjust start_time if it spills over from the previous day to 00:00
+        if start_time < start_datetime:
+            adjusted_start_time = start_datetime
+        else:
+            adjusted_start_time = start_time
+
+        # Adjust end_time if it spills over to the next day to 23:59
+        if end_time > end_datetime:
+            adjusted_end_time = end_datetime
+        else:
+            adjusted_end_time = end_time
+
+        # Format the start and end times as 4-digit numbers
+        start_time_formatted = int(adjusted_start_time.strftime('%H%M'))
+        end_time_formatted = int(adjusted_end_time.strftime('%H%M'))
+
+        # Add the event to the map
+        events_map[event['summary']] = (start_time_formatted, end_time_formatted)
+
+    return events_map
 
 
 
