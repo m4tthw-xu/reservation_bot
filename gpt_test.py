@@ -54,25 +54,11 @@ def wait_on_run(run, thread):
         time.sleep(0.5)
     return run
 
+def get_tags(desc):
+    # Emulating concurrent user requests
+    thread1, run1 = create_thread_and_run(f'''{desc}''')
 
+    # Now all Runs are executing...
 
-# Emulating concurrent user requests
-thread1, run1 = create_thread_and_run(
-    '''Parking In the Back After 5:30. Make a note of Parking Signs and Times. No Parking in the Sherman Williams portion of the Parking Lot. Alternative Street Parking if the parking lot is full.
-
-For a private room, please send an email to linasianbar.reservations@gmail.com.  Please include your Name, Phone Number, Amount of People, Day, Time, and Occasion.  Lin Asian Bar representative will contact you to assist your request further.  The maximum capacity is 14 people.
-
-CANCELLATION POLICY: While you won't be charged if you need to cancel, we ask that you do so at least 12 hours in advance.  Please consider your schedule carefully and plan accordingly before making a reservation. 
-
-By making a reservation, you agree to abide by these rules.  Thank you for understanding
-
-Reservation times do not equal the time you will be seated.  Seating delays may happen based on table availability.
-Read less
-About Lin Asian Bar + Dim Sum
-At Lin Asian Bar + Dim Sum, chef Ling Qi Wu serves traditional Chinese cuisine, but with a focus on fresh, organic produce. Dim sum is her specialty, the most extensive selection of which is available at Sunday brunch. Her menu extends to appetizers like grilled char siu, entrees like salt-and-pepper double lobster tail, and plenty more. Decked in colorful red lanterns, the restaurant features an open kitchen and a dim sum counter, so guests can interact with the chef while she’s doing her thing.'''
-)
-
-# Now all Runs are executing...
-
-run1 = wait_on_run(run1, thread1)
-pretty_print(get_response(thread1))
+    run1 = wait_on_run(run1, thread1)
+    return pretty_print(get_response(thread1))

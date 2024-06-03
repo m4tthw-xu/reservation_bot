@@ -5,29 +5,18 @@
 import resy_scraper
 # import gpt_test
 import asyncio
+import db_manager
 
 async def main():
-    city_url = "https://resy.com/cities/austin-tx/search?date=2024-05-31&seats=2&facet=cuisine:American"  # Define your city URL
+    city_url = "https://resy.com/cities/austin-tx/search?date=2024-06-05&seats=2&facet=cuisine:New%20American"  # Define your city URL
     city = "austin-tx"
-    date = "2024-06-01"
+    date = "2024-06-07"
     seats = 2
 
-    restaurants = await resy_scraper.scrape_all_restaurant_names_and_links(city_url)
-    print(restaurants)
-
-    for res in restaurants:
-        print(res['name'])
-        desc = await resy_scraper.scrape_restaurant_descriptions(res['link'])
-        res['descriptions'] = desc
-        print(desc)
-        print()
-
+    # restaurants = await resy_scraper.scrape_all_restaurant_names_and_links(city_url)
     # print(restaurants)
 
-
-
-
-
+    await db_manager.create_tags()
 
 
 if __name__ == "__main__":
