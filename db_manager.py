@@ -88,6 +88,8 @@ async def populate_descriptions():
 
         print()
 
+
+# NOTE: running this function calls the OpenAI API, which costs money lol
 async def create_tags():
     cursor = restaurants_collection.find({})
 
@@ -118,6 +120,12 @@ async def create_tags():
 
 
 # Example usage:
+
+# rest1 = get_restaurant('Lenoir')
+# rest2 = get_restaurant('Kinfolk')
+#
+# print(rest1['tags'])
+# print(rest2['tags'])
 
 # delete_all_restaurants()
 

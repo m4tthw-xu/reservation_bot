@@ -12,11 +12,20 @@ async def main():
     city = "austin-tx"
     date = "2024-06-07"
     seats = 2
+    restaurant = 'Kinfolk'
 
     # restaurants = await resy_scraper.scrape_all_restaurant_names_and_links(city_url)
     # print(restaurants)
 
-    await db_manager.create_tags()
+    res1 = db_manager.get_restaurant('LENOIR')
+    res2 = db_manager.get_restaurant('Kinfolk')
+    print(res1['tags'])
+    print(res2['tags'])
+
+
+
+
+    db_manager.client.close()
 
 
 if __name__ == "__main__":

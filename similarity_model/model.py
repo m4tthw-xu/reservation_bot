@@ -49,15 +49,17 @@ def train_model():
     )
     word2vec_model.save("word2vec_restaurant.model")
 
-# train_model()
+def find_similarity(word1, word2):
+    # Find similar words using Word2Vec
+    word2vec_model = Word2Vec.load("similarity_model/word2vec_restaurant.model")
+    # similar_words = word2vec_model.wv.most_similar('tofu', topn=100)
+    # print("Word2Vec similar words to 'tofu':", similar_words)
 
-# Find similar words using Word2Vec
-word2vec_model = Word2Vec.load("word2vec_restaurant.model")
-# similar_words = word2vec_model.wv.most_similar('tofu', topn=100)
-# print("Word2Vec similar words to 'tofu':", similar_words)
+    try:
+        similarity_value = word2vec_model.wv.similarity(word1, word2)
+    except:
+        return -1
+    return similarity_value
 
-word1 = 'georgia'
-word2 = 'texas'
 
-similarity_value = word2vec_model.wv.similarity(word1, word2)
-print(f"Association between '{word1}' and '{word2}': {similarity_value}")
+print(f"Association between 'chinese' and 'dumpling': {find_similarity('chinese', 'dumpling')}")

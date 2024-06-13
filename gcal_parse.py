@@ -11,33 +11,33 @@ from googleapiclient.errors import HttpError
 from datetime import timedelta
 from datetime import datetime
 
+
+# INITIALIZATION RITUAL
+
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-def main():
-    creds = None
+creds = None
 
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json")
+if os.path.exists("token.json"):
+    creds = Credentials.from_authorized_user_file("token.json")
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
-            creds = flow.run_local_server(port = 0)
+if not creds or not creds.valid:
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+    else:
+        flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+        creds = flow.run_local_server(port = 0)
 
-        with open("token.json", "w") as token:
-            token.write(creds.to_json())
+    with open("token.json", "w") as token:
+        token.write(creds.to_json())
 
-    try:
-        service = build("calendar", "v3", credentials=creds)
+try:
+    service = build("calendar", "v3", credentials=creds)
 
-        # rand_events(service)
+except HttpError as error:
+    print(f"An error occurred: {error}")
 
-        print(get_events_on_day(2024, 5, 31, 'America/Chicago', service=service))
 
-    except HttpError as error:
-        print(f"An error occurred: {error}")
 
 
 # this function will randomly populate my gcal with events to simulate a busy schedule, since my schedule isn't busy lol
@@ -47,7 +47,7 @@ def rand_events(service):
     start_date = datetime.now()
     end_date = start_date + timedelta(days=7)
 
-    for _ in range(5):  # number of events to generate
+    for _ in range(50):  # number of events to generate
         # Generate a random start time
         start_time = start_date + timedelta(hours=random.randint(7, 22 * 7 - 1))
 
@@ -69,7 +69,9 @@ def rand_events(service):
 
         print(f'Event created: {event.get("htmlLink")}')
 
-def get_events_on_day(year, month, day, timezone_str, service):
+
+# this function returns a list of all the events on a certain day in military time
+def get_events_on_day(year, month, day, timezone_str):
     # Set the start and end times for the day including the full day from 00:00 to 23:59
     timezone = pytz.timezone(timezone_str)
     start_datetime = timezone.localize(datetime(year, month, day, 0, 0, 0))  # 00:00
@@ -114,8 +116,8 @@ def get_events_on_day(year, month, day, timezone_str, service):
             adjusted_end_time = end_time
 
         # Format the start and end times as 4-digit numbers
-        start_time_formatted = int(adjusted_start_time.strftime('%H%M'))
-        end_time_formatted = int(adjusted_end_time.strftime('%H%M'))
+        start_time_formatted = adjusted_start_time.strftime('%H%M')
+        end_time_formatted = adjusted_end_time.strftime('%H%M')
 
         # Add the event to the map
         events_map[event['summary']] = (start_time_formatted, end_time_formatted)
@@ -123,6 +125,32 @@ def get_events_on_day(year, month, day, timezone_str, service):
     return events_map
 
 
+def add_events_to_calendar(events):
+    calendar_id = 'primary'
 
-if __name__ == "__main__":
-  main()
+    # Add each event to the calendar
+    for event in events:
+        start_time = event[0]
+        end_time = event[1]
+        summary = event[2]
+        event_body = {
+            'summary': summary,
+            'location': '',
+            'description': '',
+            'start': {
+                'dateTime': start_time,
+                'timeZone': 'UTC',
+            },
+            'end': {
+                'dateTime': end_time,
+                'timeZone': 'UTC',
+            },
+            'attendees': [],
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+        service.events().insert(calendarId=calendar_id, body=event_body).execute()

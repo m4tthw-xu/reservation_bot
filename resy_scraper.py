@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import urllib
 
 from pyppeteer import launch
@@ -31,6 +32,12 @@ async def scrape_all_restaurant_names_and_links(url):
 
     return restaurant_data
 
+def convert_to_military_time(time_str):
+    # Parse the time string with AM/PM format
+    time_obj = datetime.datetime.strptime(time_str, '%I:%M %p')
+    # Convert to 24-hour format and return as string
+    return time_obj.strftime('%H:%M')
+
 # this function will scrape all the reservation buttons on a restaurant's page for the times
 # input: url of restaurant page on resy
 # output: list of available times that restaurant can be booked for, and their seat types
@@ -43,7 +50,7 @@ async def scrape_reservation_buttons(url):
     # Wait for a specific element that indicates the page has loaded the content
 
     try:
-        await page.waitForSelector('.ShiftInventory__shift', timeout=500)  # Wait for up to 60 seconds
+        await page.waitForSelector('.ShiftInventory__shift', timeout=2000)  # Wait for up to 60 seconds
     except:
         print("Reservation Times: []")
         await browser.close()
@@ -58,7 +65,11 @@ async def scrape_reservation_buttons(url):
         }));
     }''')
 
-    print('Reservation Times:', reservation_buttons)
+    # Convert times to military time
+    for button in reservation_buttons:
+        button['time'] = convert_to_military_time(button['time'])
+
+    # print('Reservation Times:', reservation_buttons)
 
     await browser.close()
 
@@ -68,7 +79,7 @@ async def scrape_reservation_buttons(url):
 # and outputs a url to search for
 # input: name, city, date, seats
 # output: url that has the available seat times for the specific criteria, empty if none
-def build_reservation_url(restaurant_name, city_state, date, seats):
+def build_reservation_url(link, restaurant_name, city_state, date, seats):
     """
     Constructs a reservation URL for a specified restaurant, location, date, and party size.
 
@@ -107,6 +118,35 @@ def build_reservation_url(restaurant_name, city_state, date, seats):
     reservation_url = urllib.parse.urlunparse(url_parts)
 
     return reservation_url
+
+
+def update_url(url, new_date, new_seats):
+    from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+    parts = new_date.split('/')
+
+    # need YYYY-MM-DD from MM/DD/YYYY
+
+    date = parts[2] + '-' + parts[0] + '-' + parts[1]
+
+    # Parse the URL into components
+    parsed_url = urlparse(url)
+
+    # Parse the query parameters
+    query_params = parse_qs(parsed_url.query)
+
+    # Update the date and seats parameters
+    query_params['date'] = [date]
+    query_params['seats'] = [str(new_seats)]
+
+    # Reconstruct the query string
+    new_query_string = urlencode(query_params, doseq=True)
+
+    # Construct the new URL
+    new_url = urlunparse(parsed_url._replace(query=new_query_string))
+
+    return new_url
+
 
 # this function will scrape the descriptions of restaurant pages in order to gather data and generate tags
 # input: webpage url
