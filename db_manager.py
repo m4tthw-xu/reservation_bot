@@ -1,5 +1,5 @@
 import os
-import gpt_test
+import tagging_gpt
 import resy_scraper
 
 from pymongo import MongoClient

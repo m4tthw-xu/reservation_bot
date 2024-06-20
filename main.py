@@ -4,9 +4,10 @@ from datetime import datetime, timedelta
 
 import gcal_parse
 import resy_scraper
-import gpt_test
+import tagging_gpt
 import db_manager
 import restaurant_graph_visual
+import request_gpt
 
 
 async def main():
@@ -15,16 +16,23 @@ async def main():
     # requests = generate_random_requests(restaurants)
 
     # the restaurant data we need to create a request. we need to parse this request to actions
-    requests = [{
-        "date": "06/17/2024",  # "2024-06-12",
-        "seats": 2,
-        "restaurant": 'Odd Duck',
-        "city": 'austin-tx',
-        "time": '17:30',
-        "time-zone": 'America/Chicago',
-        "duration": 1,  # hours to allocate to reservation
-        "travel-buffer": 0.15
-    }]
+    requests = [
+    # {
+    #     "date": "06/21/2024",  # "2024-06-12",
+    #     "seats": 2,
+    #     "restaurant": 'Odd Duck',
+    #     "city": 'austin-tx',
+    #     "time": '17:30',
+    #     "time-zone": 'America/Chicago',
+    #     "duration": 1,  # hours to allocate to reservation
+    #     "travel-buffer": 0.15
+    # }
+    ]
+
+    prompt = ("Can you reserve a lunch spot at Launderette for me and my girlfriend on Friday? I would like to spend two hours "
+              "there.")
+
+    requests.append(request_gpt.get_request(prompt))
 
     for request in requests:
         print(request)
@@ -36,7 +44,16 @@ async def main():
 
         link = resy_scraper.update_url(link, request['date'], request['seats'])
 
-        times = await resy_scraper.scrape_reservation_buttons(link)
+        times = []
+
+        attempts = 0
+        while attempts < 3:
+            attempts += 1
+            times = await resy_scraper.scrape_reservation_buttons(link)
+            if times:  # Check if times is not empty
+                break
+            await asyncio.sleep(1)  # Optional: wait before retrying
+            print("trying to get reservations again...")
 
         print(times)
 
@@ -62,6 +79,8 @@ async def main():
             gcal_parse.add_events_to_calendar(adjusted_events)
         except:
             continue
+
+
 
 
 def find_closest_reservation(requested_date, requested_time, duration, travel_time, available_reservations, unavailable_times, restaurant_name):

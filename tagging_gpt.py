@@ -12,7 +12,7 @@ API_KEY = os.getenv('OPENAI_API_KEY')
 
 client = OpenAI(api_key=API_KEY)
 
-MATH_ASSISTANT_ID = "asst_G84aUDrfAoOcU7J1XOI3tco3"  # or a hard-coded ID like "asst-..."
+ASSISTANT_ID = os.getenv('ASSISTANT_ID')
 
 def submit_message(assistant_id, thread, user_message):
     client.beta.threads.messages.create(
@@ -29,7 +29,7 @@ def get_response(thread):
 
 def create_thread_and_run(user_input):
     thread = client.beta.threads.create()
-    run = submit_message(MATH_ASSISTANT_ID, thread, user_input)
+    run = submit_message(ASSISTANT_ID, thread, user_input)
     return thread, run
 
 # Pretty printing helper
