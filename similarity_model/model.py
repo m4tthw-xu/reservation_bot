@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 import json
 
-# Preprocess tXext function
+# Preprocess text function
 def preprocess_text(text):
     text = text.lower()
     text = re.sub(r'\d+', '', text)
