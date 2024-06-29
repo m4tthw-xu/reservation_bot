@@ -1,9 +1,11 @@
 import asyncio
 import random
+import sys
 from datetime import datetime, timedelta
 
 import gcal_parse
 import resy_scraper
+import sb
 import tagging_gpt
 import db_manager
 import restaurant_graph_visual
@@ -17,22 +19,22 @@ async def main():
 
     # the restaurant data we need to create a request. we need to parse this request to actions
     requests = [
-    # {
-    #     "date": "06/21/2024",  # "2024-06-12",
-    #     "seats": 2,
-    #     "restaurant": 'Odd Duck',
-    #     "city": 'austin-tx',
-    #     "time": '17:30',
-    #     "time-zone": 'America/Chicago',
-    #     "duration": 1,  # hours to allocate to reservation
-    #     "travel-buffer": 0.15
-    # }
+        {
+            "date": "07/05/2024",
+            "seats": 2,
+            "restaurant": "Eldorado Cafe",
+            "city": "austin-tx",
+            "time": "16:30",
+            "time-zone": "America/Chicago",
+            "duration": 1.5,
+            "travel-buffer": 0.15
+        }
     ]
 
-    prompt = ("Can you reserve a lunch spot at Launderette for me and my girlfriend on Friday? I would like to spend two hours "
+    prompt = ("I'm going on a double date. Can you reserve a spot at Bartlett's on Sunday? I would like to spend an hour and a half "
               "there.")
 
-    requests.append(request_gpt.get_request(prompt))
+    # requests.append(request_gpt.get_request(prompt))
 
     for request in requests:
         print(request)
@@ -47,7 +49,7 @@ async def main():
         times = []
 
         attempts = 0
-        while attempts < 3:
+        while attempts < 2:
             attempts += 1
             times = await resy_scraper.scrape_reservation_buttons(link)
             if times:  # Check if times is not empty
@@ -67,8 +69,11 @@ async def main():
             closest_reservation = find_closest_reservation(request['date'], request['time'], float(request['duration']), float(request['travel-buffer']), times, unavailable_times, request['restaurant'])
             print(closest_reservation)
 
+            times = extract_military_time(closest_reservation[len(closest_reservation) // 2])
+            sb.click_time_button(times[0] + ":00", link, '')
+
             # Adjust the timezone offset
-            offset = timedelta(hours=5)  # Replace with your timezone offset
+            offset = timedelta(hours=5)  # This timezone offset is for Austin, Texas
 
             adjusted_events = []
             for event in closest_reservation:
@@ -76,7 +81,21 @@ async def main():
                 end_time = datetime.strptime(event[1], '%Y-%m-%dT%H:%M:%S%z') + offset
                 adjusted_events.append((start_time.isoformat(), end_time.isoformat(), event[2]))
 
+            while True:
+                user_input = input("Did you successfully make the reservation? (y/n): \n").strip().lower()
+                if user_input == 'y':
+                    print("I'll go ahead and mark that on your calendar!")
+                    break
+
+                if user_input == 'n':
+                    print("Okay, please try again.")
+                    sys.exit(1)
+
             gcal_parse.add_events_to_calendar(adjusted_events)
+
+            print("Done!")
+
+
         except:
             continue
 
@@ -179,6 +198,14 @@ def find_closest_reservation(requested_date, requested_time, duration, travel_ti
     else:
         return None
 
+def extract_military_time(time_range):
+    start_time_str, end_time_str, _ = time_range
+
+    # Extract the time part from the strings
+    start_time = start_time_str[11:16]
+    end_time = end_time_str[11:16]
+
+    return start_time, end_time
 
 def generate_random_requests(restaurants):
     requests = []

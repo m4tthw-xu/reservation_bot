@@ -131,16 +131,16 @@ async def create_tags():
 
 
 # restaurant_name = "Odd Duck"
-# restaurant_tags = ["American", "Coarse Dining", "Posh"]
-# restaurant_link = "https://www.thefancybistro.com"
-#
-# add_restaurant(restaurant_name, restaurant_tags, restaurant_link)
-#
-# updates = {"rating": 3.5}
-# update_restaurant(restaurant_name, updates)
+# # restaurant_tags = ["American", "Coarse Dining", "Posh"]
+# # restaurant_link = "https://www.thefancybistro.com"
 # #
-# # restaurant = get_restaurant(restaurant_name)
-# # print(restaurant)
+# # add_restaurant(restaurant_name, restaurant_tags, restaurant_link)
+# #
+# # updates = {"rating": 3.5}
+# # update_restaurant(restaurant_name, updates)
+# # #
+# restaurant = get_restaurant(restaurant_name)
+# print(restaurant)
 # #
 # # add_property_to_all_restaurants("cuisine", "French")
 #
